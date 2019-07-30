@@ -28,7 +28,6 @@ class BaseReader(object):
                  max_seq_len=512,
                  do_lower_case=True,
                  in_tokens=False,
-                 is_inference=False,
                  random_seed=None):
         self.max_seq_len = max_seq_len
         self.tokenizer = tokenization.FullTokenizer(
@@ -38,7 +37,6 @@ class BaseReader(object):
         self.cls_id = self.vocab["[CLS]"]
         self.sep_id = self.vocab["[SEP]"]
         self.in_tokens = in_tokens
-        self.is_inference = is_inference
 
         np.random.seed(random_seed)
 
@@ -143,33 +141,25 @@ class BaseReader(object):
         token_ids = tokenizer.convert_tokens_to_ids(tokens)
         position_ids = list(range(len(token_ids)))
 
-        if self.is_inference:
-            Record = namedtuple('Record',
-                                ['token_ids', 'text_type_ids', 'position_ids'])
-            record = Record(
-                token_ids=token_ids,
-                text_type_ids=text_type_ids,
-                position_ids=position_ids)
+        if self.label_map:
+            label_id = self.label_map[example.label]
         else:
-            if self.label_map:
-                label_id = self.label_map[example.label]
-            else:
-                label_id = example.label
+            label_id = example.label
 
-            Record = namedtuple('Record', [
-                'token_ids', 'text_type_ids', 'position_ids', 'label_id', 'qid'
-            ])
+        Record = namedtuple(
+            'Record',
+            ['token_ids', 'text_type_ids', 'position_ids', 'label_id', 'qid'])
 
-            qid = None
-            if "qid" in example._fields:
-                qid = example.qid
+        qid = None
+        if "qid" in example._fields:
+            qid = example.qid
 
-            record = Record(
-                token_ids=token_ids,
-                text_type_ids=text_type_ids,
-                position_ids=position_ids,
-                label_id=label_id,
-                qid=qid)
+        record = Record(
+            token_ids=token_ids,
+            text_type_ids=text_type_ids,
+            position_ids=position_ids,
+            label_id=label_id,
+            qid=qid)
         return record
 
     def _prepare_batch_data(self, examples, batch_size, phase=None):
@@ -202,7 +192,7 @@ class BaseReader(object):
                        input_file,
                        batch_size,
                        epoch,
-                       shuffle=True,
+                       shuffle=False,
                        phase=None):
         examples = self._read_tsv(input_file)
 
@@ -227,36 +217,50 @@ class ClassifyReader(BaseReader):
         with open(input_file, "r") as f:
             reader = csv.reader(f, delimiter="\t", quotechar=quotechar)
             headers = next(reader)
+            print(headers)
+#            headers = ['label', 'text_a']
             text_indices = [
                 index for index, h in enumerate(headers) if h != "label"
             ]
+            print(text_indices)
             Example = namedtuple('Example', headers)
 
             examples = []
+            count = 0
+            bad = 0
             for line in reader:
+#                print(line)
                 for index, text in enumerate(line):
+#                    print(index)
+#                    print(text)
+                    
+                    print(count)
+                    count += 1
                     if index in text_indices:
+#                        print(index)
                         line[index] = text.replace(' ', '')
-                example = Example(*line)
-                examples.append(example)
+                try:    
+                    example = Example(*line)
+                    examples.append(example)
+                except:
+                    bad += 1
+                    print('error')
+            print(examples[0])
+            print(bad)
             return examples
 
     def _pad_batch_records(self, batch_records):
         batch_token_ids = [record.token_ids for record in batch_records]
         batch_text_type_ids = [record.text_type_ids for record in batch_records]
         batch_position_ids = [record.position_ids for record in batch_records]
+        batch_labels = [record.label_id for record in batch_records]
+        batch_labels = np.array(batch_labels).astype("int64").reshape([-1, 1])
 
-        if not self.is_inference:
-            batch_labels = [record.label_id for record in batch_records]
-            batch_labels = np.array(batch_labels).astype("int64").reshape(
-                [-1, 1])
-
-            if batch_records[0].qid is not None:
-                batch_qids = [record.qid for record in batch_records]
-                batch_qids = np.array(batch_qids).astype("int64").reshape(
-                    [-1, 1])
-            else:
-                batch_qids = np.array([]).astype("int64").reshape([-1, 1])
+        if batch_records[0].qid:
+            batch_qids = [record.qid for record in batch_records]
+            batch_qids = np.array(batch_qids).astype("int64").reshape([-1, 1])
+        else:
+            batch_qids = np.array([]).astype("int64").reshape([-1, 1])
 
         # padding
         padded_token_ids, input_mask = pad_batch_data(
@@ -268,10 +272,8 @@ class ClassifyReader(BaseReader):
 
         return_list = [
             padded_token_ids, padded_text_type_ids, padded_position_ids,
-            input_mask
+            input_mask, batch_labels, batch_qids
         ]
-        if not self.is_inference:
-            return_list += [batch_labels, batch_qids]
 
         return return_list
 

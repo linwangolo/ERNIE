@@ -1,0 +1,60 @@
+name: "test_reader_double_buffer"
+type {
+  type: READER
+  reader {
+    lod_tensor {
+      tensor {
+        data_type: INT64
+        dims: -1
+        dims: 256
+        dims: 1
+      }
+      lod_level: 0
+    }
+    lod_tensor {
+      tensor {
+        data_type: INT64
+        dims: -1
+        dims: 256
+        dims: 1
+      }
+      lod_level: 0
+    }
+    lod_tensor {
+      tensor {
+        data_type: INT64
+        dims: -1
+        dims: 256
+        dims: 1
+      }
+      lod_level: 0
+    }
+    lod_tensor {
+      tensor {
+        data_type: FP32
+        dims: -1
+        dims: 256
+        dims: 1
+      }
+      lod_level: 0
+    }
+    lod_tensor {
+      tensor {
+        data_type: INT64
+        dims: -1
+        dims: 1
+      }
+      lod_level: 0
+    }
+    lod_tensor {
+      tensor {
+        data_type: INT64
+        dims: -1
+        dims: 1
+      }
+      lod_level: 0
+    }
+  }
+}
+persistable: true
+	

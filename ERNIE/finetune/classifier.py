@@ -25,6 +25,7 @@ import paddle.fluid as fluid
 
 from model.ernie import ErnieModel
 
+import csv
 
 def create_model(args, pyreader_name, ernie_config, is_prediction=False):
     pyreader = fluid.layers.py_reader(
@@ -65,7 +66,7 @@ def create_model(args, pyreader_name, ernie_config, is_prediction=False):
     if is_prediction:
         probs = fluid.layers.softmax(logits)
         feed_targets_name = [
-            src_ids.name, sent_ids.name, pos_ids.name, input_mask.name
+            src_ids.name, pos_ids.name, sent_ids.name, input_mask.name
         ]
         return pyreader, probs, feed_targets_name
 
@@ -156,7 +157,7 @@ def evaluate(exe, test_program, test_pyreader, graph_vars, eval_phase):
         outputs = exe.run(fetch_list=train_fetch_list)
         ret = {"loss": np.mean(outputs[0]), "accuracy": np.mean(outputs[1])}
         if "learning_rate" in graph_vars:
-            ret["learning_rate"] = float(outputs[3][0])
+            ret["learning_rate"] = float(outputs[4][0])
         return ret
 
     test_pyreader.start()
@@ -169,16 +170,17 @@ def evaluate(exe, test_program, test_pyreader, graph_vars, eval_phase):
         graph_vars["probs"].name, graph_vars["labels"].name,
         graph_vars["num_seqs"].name, graph_vars["qids"].name
     ]
+    probs_list = []
     while True:
         try:
             np_loss, np_acc, np_probs, np_labels, np_num_seqs, np_qids = exe.run(
                 program=test_program, fetch_list=fetch_list)
+#            print(np_probs)
+            probs_list.append(np_probs)  
             total_cost += np.sum(np_loss * np_num_seqs)
             total_acc += np.sum(np_acc * np_num_seqs)
             total_num_seqs += np.sum(np_num_seqs)
             labels.extend(np_labels.reshape((-1)).tolist())
-            if np_qids is None:
-                np_qids = np.array([])
             qids.extend(np_qids.reshape(-1).tolist())
             scores.extend(np_probs[:, 1].reshape(-1).tolist())
             np_preds = np.argmax(np_probs, axis=1).astype(np.float32)
@@ -189,6 +191,15 @@ def evaluate(exe, test_program, test_pyreader, graph_vars, eval_phase):
             test_pyreader.reset()
             break
     time_end = time.time()
+#    li = []
+#    for x in probs_list:
+#        li.append(x[0][1])
+#        li.append(x[1][1])
+    
+#    with open('output_test.csv', 'w') as f:
+#        wr = csv.writer(f)
+#        wr.writerow(li)
+    
 
     if len(qids) == 0:
         print(

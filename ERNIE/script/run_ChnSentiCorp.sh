@@ -2,18 +2,21 @@ set -eux
 
 export FLAGS_sync_nccl_allreduce=1
 export CUDA_VISIBLE_DEVICES=0
+export MODEL_PATH=/home/ibdo/Desktop/NLP/
+export TASK_DATA_PATH=/home/ibdo/Desktop/NLP/task_data
 
-python -u run_classifier.py \
+python3 -u run_classifier.py \
+	           --init_checkpoint /home/ibdo/Desktop/NLP/0617-0621/ERNIE/checkpoints/step_1000 \
                    --use_cuda true \
                    --verbose true \
-                   --do_train true \
-                   --do_val true \
+                   --do_train false \
+                   --do_val false \
                    --do_test true \
-                   --batch_size 24 \
+                   --batch_size 2 \
                    --init_pretraining_params ${MODEL_PATH}/params \
                    --train_set ${TASK_DATA_PATH}/chnsenticorp/train.tsv \
                    --dev_set ${TASK_DATA_PATH}/chnsenticorp/dev.tsv \
-                   --test_set ${TASK_DATA_PATH}/chnsenticorp/test.tsv \
+                   --test_set /home/ibdo/Desktop/NLP/0617-0621/ERNIE/snownlp\ data/snow_ERNIE.tsv \
                    --vocab_path config/vocab.txt \
                    --checkpoints ./checkpoints \
                    --save_steps 1000 \

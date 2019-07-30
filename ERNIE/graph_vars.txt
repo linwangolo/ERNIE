@@ -1,0 +1,74 @@
+{'loss': name: "mean_0.tmp_0"
+type {
+  type: LOD_TENSOR
+  lod_tensor {
+    tensor {
+      data_type: FP32
+      dims: 1
+    }
+  }
+}
+persistable: true
+, 'probs': name: "softmax_with_cross_entropy_0.tmp_0"
+type {
+  type: LOD_TENSOR
+  lod_tensor {
+    tensor {
+      data_type: FP32
+      dims: -1
+      dims: 2
+    }
+    lod_level: 0
+  }
+}
+persistable: true
+, 'accuracy': name: "accuracy_0.tmp_0"
+type {
+  type: LOD_TENSOR
+  lod_tensor {
+    tensor {
+      data_type: FP32
+      dims: 1
+    }
+    lod_level: 0
+  }
+}
+persistable: true
+, 'labels': name: "read_file_0.tmp_4"
+type {
+  type: LOD_TENSOR
+  lod_tensor {
+    tensor {
+      data_type: INT64
+      dims: -1
+      dims: 1
+    }
+    lod_level: 0
+  }
+}
+persistable: true
+, 'num_seqs': name: "create_tensor_0"
+type {
+  type: LOD_TENSOR
+  lod_tensor {
+    tensor {
+      data_type: INT64
+      dims: 1
+    }
+  }
+}
+persistable: true
+, 'qids': name: "read_file_0.tmp_5"
+type {
+  type: LOD_TENSOR
+  lod_tensor {
+    tensor {
+      data_type: INT64
+      dims: -1
+      dims: 1
+    }
+    lod_level: 0
+  }
+}
+persistable: true
+}
